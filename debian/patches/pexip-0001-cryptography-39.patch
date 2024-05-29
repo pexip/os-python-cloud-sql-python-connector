@@ -1,0 +1,61 @@
+diff --git a/google/cloud/sql/connector/client.py b/google/cloud/sql/connector/client.py
+index 6acb117..4bc9adc 100644
+--- a/google/cloud/sql/connector/client.py
++++ b/google/cloud/sql/connector/client.py
+@@ -206,7 +206,7 @@ class CloudSQLClient:
+         x509 = load_pem_x509_certificate(
+             ephemeral_cert.encode("UTF-8"), default_backend()
+         )
+-        expiration = x509.not_valid_after_utc
++        expiration = x509.not_valid_after.replace(tzinfo=datetime.timezone.utc)
+         # for IAM authentication OAuth2 token is embedded in cert so it
+         # must still be valid for successful connection
+         if enable_iam_auth:
+diff --git a/tests/unit/mocks.py b/tests/unit/mocks.py
+index dfefee3..1e4169c 100644
+--- a/tests/unit/mocks.py
++++ b/tests/unit/mocks.py
+@@ -257,7 +257,7 @@ class FakeCSQLInstance:
+             "serverCaCert": {
+                 "cert": self.server_cert_pem,
+                 "instance": self.name,
+-                "expirationTime": str(self.server_cert.not_valid_after_utc),
++                "expirationTime": str(self.server_cert.not_valid_after.replace(tzinfo=datetime.timezone.utc)),
+             },
+             "dnsName": "abcde.12345.us-central1.sql.goog",
+             "ipAddresses": ip_addrs,
+@@ -279,7 +279,7 @@ class FakeCSQLInstance:
+             "ephemeralCert": {
+                 "kind": "sql#sslCert",
+                 "cert": ephemeral_cert,
+-                "expirationTime": str(self.server_cert.not_valid_after_utc),
++                "expirationTime": str(self.server_cert.not_valid_after.replace(tzinfo=datetime.timezone.utc)),
+             }
+         }
+         return web.Response(content_type="application/json", body=json.dumps(response))
+diff --git a/tests/unit/test_instance.py b/tests/unit/test_instance.py
+index 136fddb..22740dd 100644
+--- a/tests/unit/test_instance.py
++++ b/tests/unit/test_instance.py
+@@ -232,7 +232,7 @@ async def test_perform_refresh(
+     # verify instance metadata object is returned
+     assert isinstance(instance_metadata, ConnectionInfo)
+     # verify instance metadata expiration
+-    assert fake_instance.server_cert.not_valid_after_utc == instance_metadata.expiration
++    assert fake_instance.server_cert.not_valid_after.replace(tzinfo=datetime.timezone.utc) == instance_metadata.expiration
+ 
+ 
+ @pytest.mark.asyncio
+diff --git a/setup.py b/setup.py
+index 22b0094..1fc7980 100644
+--- a/setup.py
++++ b/setup.py
+@@ -26,7 +26,7 @@ description = (
+ release_status = "Development Status :: 5 - Production/Stable"
+ dependencies = [
+     "aiohttp",
+-    "cryptography>=42.0.0",
++    "cryptography>=39.0.0",
+     "Requests",
+     "google-auth>=2.28.0",
+ ]

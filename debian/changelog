@@ -1,5 +1,6 @@
 python-cloud-sql-python-connector (1.9.2-0+pexip24u1) pexip; urgency=medium
 
   * Prepare Pexip Packaging
+  * Add cryptography 39 support back
 
  -- Huw Jones <huw@pexip.com>  Wed, 29 May 2024 10:14:58 +0100
