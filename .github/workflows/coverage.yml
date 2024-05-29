@@ -1,0 +1,89 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Code Coverage
+on:
+  pull_request:
+  pull_request_target:
+    types: [labeled]
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  coverage:
+    if: "${{ github.event.action != 'labeled' || github.event.label.name == 'tests: run' }}"
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Remove PR Label
+        if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                name: 'tests: run',
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number
+              });
+            } catch (e) {
+              console.log('Failed to remove label. Another job may have already removed it!');
+            }
+
+      - name: Setup Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        with:
+          python-version: "3.10"
+
+      - run: pip install nox coverage
+
+      - name: Checkout base branch
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Calculate base code coverage
+        run: |
+          nox --sessions unit-3.10
+          coverage report --show-missing
+          export CUR_COVER=$(coverage report | awk '$1 == "TOTAL" {print $NF+0}')
+          echo "CUR_COVER=$CUR_COVER" >> $GITHUB_ENV
+          coverage erase
+
+      - name: Checkout PR branch
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Calculate PR code coverage
+        run: |
+          nox --sessions unit-3.10
+          coverage report --show-missing
+          export PR_COVER=$(coverage report | awk '$1 == "TOTAL" {print $NF+0}')
+          echo "PR_COVER=$PR_COVER" >> $GITHUB_ENV
+          coverage erase
+
+      - name: Verify code coverage. If your reading this and the step has failed, please add tests to cover your changes.
+        run: |
+          echo "BASE BRANCH CODE COVERAGE is ${{ env.CUR_COVER }}%"
+          echo "PULL REQUEST CODE COVERAGE is ${{ env.PR_COVER }}%"
+          if [ "${{ env.PR_COVER }}" -lt "${{ env.CUR_COVER }}"  ]; then
+            exit 1;
+          fi
