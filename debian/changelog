@@ -1,3 +1,9 @@
+python-cloud-sql-python-connector (1.9.2-0+pexip24u2) pexip; urgency=medium
+
+  * Rebuild for basket
+
+ -- Huw Jones <huw@pexip.com>  Wed, 29 May 2024 11:32:36 +0100
+
 python-cloud-sql-python-connector (1.9.2-0+pexip24u1) pexip; urgency=medium
 
   * Prepare Pexip Packaging
