@@ -1,0 +1,13 @@
+diff --git a/tests/unit/test_pg8000.py b/tests/unit/test_pg8000.py
+index 26a4bfe..2e9807d 100644
+--- a/tests/unit/test_pg8000.py
++++ b/tests/unit/test_pg8000.py
+@@ -22,7 +22,7 @@ import pytest
+ 
+ from google.cloud.sql.connector.pg8000 import connect
+ 
+-
++@pytest.mark.skip("old version of pg8000")
+ @pytest.mark.usefixtures("server")
+ @pytest.mark.asyncio
+ async def test_pg8000(kwargs: Any) -> None:
