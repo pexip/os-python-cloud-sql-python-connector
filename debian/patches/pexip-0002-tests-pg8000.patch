@@ -1,3 +1,5 @@
+Skip tests when using old version of pg8000
+
 diff --git a/tests/unit/test_pg8000.py b/tests/unit/test_pg8000.py
 index 26a4bfe..2e9807d 100644
 --- a/tests/unit/test_pg8000.py

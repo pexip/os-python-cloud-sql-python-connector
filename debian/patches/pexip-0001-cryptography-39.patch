@@ -1,3 +1,5 @@
+Add cryptography 39 support back
+
 diff --git a/google/cloud/sql/connector/client.py b/google/cloud/sql/connector/client.py
 index 6acb117..4bc9adc 100644
 --- a/google/cloud/sql/connector/client.py
